@@ -895,7 +895,16 @@ out_list:
  */
 int i2c_add_adapter(struct i2c_adapter *adapter)
 {
+	struct device *dev = &adapter->dev;
 	int	id, res = 0;
+
+	if (dev->of_node) {
+		id = of_alias_get_id(dev->of_node, "i2c");
+		if (id >= 0) {
+			adapter->nr = id;
+			return i2c_register_adapter(adapter);
+		}
+	}
 
 retry:
 	if (idr_pre_get(&i2c_adapter_idr, GFP_KERNEL) == 0)
