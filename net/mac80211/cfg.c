@@ -1186,7 +1186,7 @@ static int ieee80211_stop_ap(struct wiphy *wiphy, struct net_device *dev)
 
 	/* free all potentially still buffered bcast frames */
 	local->total_ps_buffered -= skb_queue_len(&sdata->u.ap.ps.bc_buf);
-	skb_queue_purge(&sdata->u.ap.ps.bc_buf);
+	ieee80211_purge_tx_queue(&local->hw, &sdata->u.ap.ps.bc_buf);
 
 	mutex_lock(&local->mtx);
 	ieee80211_vif_copy_chanctx_to_vlans(sdata, true);
@@ -2890,6 +2890,8 @@ static int ieee80211_cancel_roc(struct ieee80211_local *local,
 {
 	struct ieee80211_roc_work *roc, *tmp, *found = NULL;
 	int ret;
+
+	flush_work(&local->hw_roc_start);
 
 	mutex_lock(&local->mtx);
 	list_for_each_entry_safe(roc, tmp, &local->roc_list, list) {

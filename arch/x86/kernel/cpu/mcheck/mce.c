@@ -43,8 +43,10 @@
 #include <linux/export.h>
 
 #include <asm/processor.h>
+#include <asm/tlbflush.h>
 #include <asm/mce.h>
 #include <asm/msr.h>
+#include <asm/traps.h>
 
 #include "mce-internal.h"
 
@@ -660,6 +662,7 @@ static int mce_no_way_out(struct mce *m, char **msg, unsigned long *validp,
 			  struct pt_regs *regs)
 {
 	int i, ret = 0;
+	char *tmp;
 
 	for (i = 0; i < mca_cfg.banks; i++) {
 		m->status = mce_rdmsrl(MSR_IA32_MCx_STATUS(i));
@@ -668,8 +671,11 @@ static int mce_no_way_out(struct mce *m, char **msg, unsigned long *validp,
 			if (quirk_no_way_out)
 				quirk_no_way_out(i, m, regs);
 		}
-		if (mce_severity(m, mca_cfg.tolerant, msg) >= MCE_PANIC_SEVERITY)
+
+		if (mce_severity(m, mca_cfg.tolerant, &tmp) >= MCE_PANIC_SEVERITY) {
+			*msg = tmp;
 			ret = 1;
+		}
 	}
 	return ret;
 }
@@ -1037,6 +1043,17 @@ void do_machine_check(struct pt_regs *regs, long error_code)
 	DECLARE_BITMAP(toclear, MAX_NR_BANKS);
 	DECLARE_BITMAP(valid_banks, MAX_NR_BANKS);
 	char *msg = "Unknown";
+
+	/* If this CPU is offline, just bail out. */
+	if (cpu_is_offline(smp_processor_id())) {
+		u64 mcgstatus;
+
+		mcgstatus = mce_rdmsrl(MSR_IA32_MCG_STATUS);
+		if (mcgstatus & MCG_STATUS_RIPV) {
+			mce_wrmsrl(MSR_IA32_MCG_STATUS, 0);
+			return;
+		}
+	}
 
 	this_cpu_inc(mce_exception_count);
 
@@ -1455,7 +1472,7 @@ static void __mcheck_cpu_init_generic(void)
 	bitmap_fill(all_banks, MAX_NR_BANKS);
 	machine_check_poll(MCP_UC | m_fl, &all_banks);
 
-	set_in_cr4(X86_CR4_MCE);
+	cr4_set_bits(X86_CR4_MCE);
 
 	rdmsrl(MSR_IA32_MCG_CAP, cap);
 	if (cap & MCG_CTL_P)
@@ -1676,6 +1693,11 @@ static void unexpected_machine_check(struct pt_regs *regs, long error_code)
 /* Call the installed machine check handler for this CPU setup. */
 void (*machine_check_vector)(struct pt_regs *, long error_code) =
 						unexpected_machine_check;
+
+dotraplinkage void do_mce(struct pt_regs *regs, long error_code)
+{
+	machine_check_vector(regs, error_code);
+}
 
 /*
  * Called for each booted CPU to set up machine checks.

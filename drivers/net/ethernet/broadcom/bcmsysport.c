@@ -58,8 +58,8 @@ BCM_SYSPORT_IO_MACRO(topctrl, SYS_PORT_TOPCTRL_OFFSET);
 static inline void intrl2_##which##_mask_clear(struct bcm_sysport_priv *priv, \
 						u32 mask)		\
 {									\
-	intrl2_##which##_writel(priv, mask, INTRL2_CPU_MASK_CLEAR);	\
 	priv->irq##which##_mask &= ~(mask);				\
+	intrl2_##which##_writel(priv, mask, INTRL2_CPU_MASK_CLEAR);	\
 }									\
 static inline void intrl2_##which##_mask_set(struct bcm_sysport_priv *priv, \
 						u32 mask)		\
@@ -380,13 +380,13 @@ static void bcm_sysport_get_stats(struct net_device *dev,
 		else
 			p = (char *)priv;
 		p += s->stat_offset;
-		data[i] = *(u32 *)p;
+		data[i] = *(unsigned long *)p;
 	}
 }
 
 static void bcm_sysport_free_cb(struct bcm_sysport_cb *cb)
 {
-	dev_kfree_skb_any(cb->skb);
+	dev_consume_skb_any(cb->skb);
 	cb->skb = NULL;
 	dma_unmap_addr_set(cb, dma_addr, 0);
 }
@@ -587,10 +587,7 @@ static unsigned int __bcm_sysport_tx_reclaim(struct bcm_sysport_priv *priv,
 	unsigned int c_index, last_c_index, last_tx_cn, num_tx_cbs;
 	unsigned int pkts_compl = 0, bytes_compl = 0;
 	struct bcm_sysport_cb *cb;
-	struct netdev_queue *txq;
 	u32 hw_ind;
-
-	txq = netdev_get_tx_queue(ndev, ring->index);
 
 	/* Compute how many descriptors have been processed since last call */
 	hw_ind = tdma_readl(priv, TDMA_DESC_RING_PROD_CONS_INDEX(ring->index));
@@ -622,9 +619,6 @@ static unsigned int __bcm_sysport_tx_reclaim(struct bcm_sysport_priv *priv,
 
 	ring->c_index = c_index;
 
-	if (netif_tx_queue_stopped(txq) && pkts_compl)
-		netif_tx_wake_queue(txq);
-
 	netif_dbg(priv, tx_done, ndev,
 			"ring=%d c_index=%d pkts_compl=%d, bytes_compl=%d\n",
 			ring->index, ring->c_index, pkts_compl, bytes_compl);
@@ -636,14 +630,31 @@ static unsigned int __bcm_sysport_tx_reclaim(struct bcm_sysport_priv *priv,
 static unsigned int bcm_sysport_tx_reclaim(struct bcm_sysport_priv *priv,
 					   struct bcm_sysport_tx_ring *ring)
 {
+	struct netdev_queue *txq;
 	unsigned int released;
 	unsigned long flags;
 
+	txq = netdev_get_tx_queue(priv->netdev, ring->index);
+
 	spin_lock_irqsave(&ring->lock, flags);
 	released = __bcm_sysport_tx_reclaim(priv, ring);
+	if (released)
+		netif_tx_wake_queue(txq);
+
 	spin_unlock_irqrestore(&ring->lock, flags);
 
 	return released;
+}
+
+/* Locked version of the per-ring TX reclaim, but does not wake the queue */
+static void bcm_sysport_tx_clean(struct bcm_sysport_priv *priv,
+				 struct bcm_sysport_tx_ring *ring)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&ring->lock, flags);
+	__bcm_sysport_tx_reclaim(priv, ring);
+	spin_unlock_irqrestore(&ring->lock, flags);
 }
 
 static int bcm_sysport_tx_poll(struct napi_struct *napi, int budget)
@@ -757,7 +768,8 @@ static irqreturn_t bcm_sysport_tx_isr(int irq, void *dev_id)
 	return IRQ_HANDLED;
 }
 
-static int bcm_sysport_insert_tsb(struct sk_buff *skb, struct net_device *dev)
+static struct sk_buff *bcm_sysport_insert_tsb(struct sk_buff *skb,
+					      struct net_device *dev)
 {
 	struct sk_buff *nskb;
 	struct bcm_tsb *tsb;
@@ -773,7 +785,7 @@ static int bcm_sysport_insert_tsb(struct sk_buff *skb, struct net_device *dev)
 		if (!nskb) {
 			dev->stats.tx_errors++;
 			dev->stats.tx_dropped++;
-			return -ENOMEM;
+			return NULL;
 		}
 		skb = nskb;
 	}
@@ -792,7 +804,7 @@ static int bcm_sysport_insert_tsb(struct sk_buff *skb, struct net_device *dev)
 			ip_proto = ipv6_hdr(skb)->nexthdr;
 			break;
 		default:
-			return 0;
+			return skb;
 		}
 
 		/* Get the checksum offset and the L4 (transport) offset */
@@ -810,7 +822,7 @@ static int bcm_sysport_insert_tsb(struct sk_buff *skb, struct net_device *dev)
 		tsb->l4_ptr_dest_map = csum_info;
 	}
 
-	return 0;
+	return skb;
 }
 
 static netdev_tx_t bcm_sysport_xmit(struct sk_buff *skb,
@@ -842,15 +854,6 @@ static netdev_tx_t bcm_sysport_xmit(struct sk_buff *skb,
 		goto out;
 	}
 
-	/* Insert TSB and checksum infos */
-	if (priv->tsb_en) {
-		ret = bcm_sysport_insert_tsb(skb, dev);
-		if (ret) {
-			ret = NETDEV_TX_OK;
-			goto out;
-		}
-	}
-
 	/* The Ethernet switch we are interfaced with needs packets to be at
 	 * least 64 bytes (including FCS) otherwise they will be discarded when
 	 * they enter the switch port logic. When Broadcom tags are enabled, we
@@ -861,6 +864,15 @@ static netdev_tx_t bcm_sysport_xmit(struct sk_buff *skb,
 	if (skb_padto(skb, ETH_ZLEN + ENET_BRCM_TAG_LEN)) {
 		ret = NETDEV_TX_OK;
 		goto out;
+	}
+
+	/* Insert TSB and checksum infos */
+	if (priv->tsb_en) {
+		skb = bcm_sysport_insert_tsb(skb, dev);
+		if (!skb) {
+			ret = NETDEV_TX_OK;
+			goto out;
+		}
 	}
 
 	skb_len = skb->len < ETH_ZLEN + ENET_BRCM_TAG_LEN ?
@@ -1012,6 +1024,8 @@ static int bcm_sysport_init_tx_ring(struct bcm_sysport_priv *priv,
 
 	ring->cbs = kzalloc(sizeof(struct bcm_sysport_cb) * size, GFP_KERNEL);
 	if (!ring->cbs) {
+		dma_free_coherent(kdev, sizeof(struct dma_desc),
+				  ring->desc_cpu, ring->desc_dma);
 		netif_err(priv, hw, priv->netdev, "CB allocation failed\n");
 		return -ENOMEM;
 	}
@@ -1071,7 +1085,7 @@ static void bcm_sysport_fini_tx_ring(struct bcm_sysport_priv *priv,
 	napi_disable(&ring->napi);
 	netif_napi_del(&ring->napi);
 
-	bcm_sysport_tx_reclaim(priv, ring);
+	bcm_sysport_tx_clean(priv, ring);
 
 	kfree(ring->cbs);
 	ring->cbs = NULL;

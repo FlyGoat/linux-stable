@@ -59,6 +59,7 @@ struct fib_nh_exception {
 	struct rtable __rcu		*fnhe_rth_input;
 	struct rtable __rcu		*fnhe_rth_output;
 	unsigned long			fnhe_stamp;
+	struct rcu_head			rcu;
 };
 
 struct fnhe_hash_bucket {
@@ -107,11 +108,11 @@ struct fib_info {
 	unsigned char		fib_type;
 	__be32			fib_prefsrc;
 	u32			fib_priority;
-	u32			*fib_metrics;
-#define fib_mtu fib_metrics[RTAX_MTU-1]
-#define fib_window fib_metrics[RTAX_WINDOW-1]
-#define fib_rtt fib_metrics[RTAX_RTT-1]
-#define fib_advmss fib_metrics[RTAX_ADVMSS-1]
+	struct dst_metrics	*fib_metrics;
+#define fib_mtu fib_metrics->metrics[RTAX_MTU-1]
+#define fib_window fib_metrics->metrics[RTAX_WINDOW-1]
+#define fib_rtt fib_metrics->metrics[RTAX_RTT-1]
+#define fib_advmss fib_metrics->metrics[RTAX_ADVMSS-1]
 	int			fib_nhs;
 #ifdef CONFIG_IP_ROUTE_MULTIPATH
 	int			fib_power;
@@ -200,8 +201,8 @@ void fib_free_table(struct fib_table *tb);
 
 #ifndef CONFIG_IP_MULTIPLE_TABLES
 
-#define TABLE_LOCAL_INDEX	0
-#define TABLE_MAIN_INDEX	1
+#define TABLE_LOCAL_INDEX	(RT_TABLE_LOCAL & (FIB_TABLE_HASHSZ - 1))
+#define TABLE_MAIN_INDEX	(RT_TABLE_MAIN  & (FIB_TABLE_HASHSZ - 1))
 
 static inline struct fib_table *fib_get_table(struct net *net, u32 id)
 {
