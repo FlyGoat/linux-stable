@@ -43,6 +43,7 @@ extern int __cpu_logical_map[NR_CPUS];
 /* Octeon - Tell another core to flush its icache */
 #define SMP_ICACHE_FLUSH	0x4
 #define SMP_ASK_C0COUNT		0x8
+#define SMP_CPU_BACKTRACE	0x10
 
 /* Mask of CPUs which are currently definitely operating coherently */
 extern cpumask_t cpu_coherent_mask;
@@ -80,6 +81,8 @@ static inline void __cpu_die(unsigned int cpu)
 
 extern void play_dead(void);
 #endif
+
+void arch_dump_stack(void);
 
 /*
  * This function will set up the necessary IPIs for Linux to communicate
