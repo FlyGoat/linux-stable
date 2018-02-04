@@ -633,26 +633,39 @@ unsigned long arch_align_stack(unsigned long sp)
 	return sp & ALMASK;
 }
 
-static void arch_dump_stack(void *info)
+void arch_dump_stack(void)
 {
 	struct pt_regs *regs;
+	static arch_spinlock_t lock = __ARCH_SPIN_LOCK_UNLOCKED;
 
+	arch_spin_lock(&lock);
 	regs = get_irq_regs();
 
 	if (regs)
 		show_regs(regs);
 
 	dump_stack();
+	arch_spin_unlock(&lock);
 }
 
 void arch_trigger_cpumask_backtrace(const cpumask_t *mask, bool exclude_self)
 {
 	long this_cpu = get_cpu();
+	struct cpumask backtrace_mask;
+	extern struct plat_smp_ops *mp_ops;
 
-	if (cpumask_test_cpu(this_cpu, mask) && !exclude_self)
-		dump_stack();
+	cpumask_copy(&backtrace_mask, mask);
+	if (cpumask_test_cpu(this_cpu, mask)) {
+		if (!exclude_self) {
+			struct pt_regs *regs = get_irq_regs();
+			if (regs)
+				show_regs(regs);
+			dump_stack();
+		}
+		cpumask_clear_cpu(this_cpu, &backtrace_mask);
+	}
 
-	smp_call_function_many(mask, arch_dump_stack, NULL, 1);
+	mp_ops->send_ipi_mask(&backtrace_mask, SMP_CPU_BACKTRACE);
 
 	put_cpu();
 }
