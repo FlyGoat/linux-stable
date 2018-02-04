@@ -277,6 +277,12 @@ void loongson3_ipi_interrupt(struct pt_regs *regs)
 			core0_c0count[i] = c0count;
 		__wbflush(); /* Let others see the result ASAP */
 	}
+
+	if (action & SMP_CPU_BACKTRACE) {
+		irq_enter();
+		arch_dump_stack();
+		irq_exit();
+	}
 }
 
 #define MAX_LOOPS 800
