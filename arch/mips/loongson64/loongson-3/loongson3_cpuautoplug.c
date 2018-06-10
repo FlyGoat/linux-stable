@@ -373,7 +373,11 @@ static struct platform_driver platform_driver = {
 };
 
 static int __init cpuautoplug_init(void)
-{
+{	
+
+	if (loongson_sysconf.systype == Loongson_SOC){
+		pr_info("No CPU Hotplug for Loongson-SOC");
+	}
 	int ret, delay;
 
 	ret = sysfs_create_group(&cpu_subsys.dev_root->kobj, &cpuclass_attr_group);

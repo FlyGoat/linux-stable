@@ -17,6 +17,7 @@
 #include <linux/platform_device.h>
 #include <asm/bootinfo.h>
 #include <boot_param.h>
+#include <loongson.h>
 #include <loongson-pch.h>
 #include <loongson_hwmon.h>
 #include <workarounds.h>
@@ -85,7 +86,6 @@ static int __init loongson3_platform_init(void)
 {
 	int i;
 	struct platform_device *pdev;
-
 	loongson_pch->pch_arch_initcall();
 
 	if (loongson_sysconf.ecname[0] != '\0')
@@ -110,12 +110,26 @@ static int __init loongson3_platform_init(void)
 	return 0;
 }
 
-static int __init loongson3_device_init(void)
+static int __init loongson_device_init(void)
 {
+	if (loongson_sysconf.systype = Loongson_SOC) {
+		loongson_soc->soc_device_initcall();
+	} else {
 	loongson_pch->pch_device_initcall();
-
+}
 	return 0;
 }
 
-arch_initcall(loongson3_platform_init);
-device_initcall(loongson3_device_init);
+
+static int __init loongson_platform_init(void) {
+
+if (loongson_sysconf.systype = Loongson_SOC) {
+	loongson_soc->soc_arch_initcall();
+} else {
+	loongson3_platform_init();
+}
+	return 0;
+}
+
+arch_initcall(loongson_platform_init);
+device_initcall(loongson_device_init);

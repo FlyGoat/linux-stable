@@ -11,6 +11,8 @@
 #include <linux/err.h>
 #include <linux/smp.h>
 #include <linux/platform_device.h>
+#include <boot_param.h>
+#include <loongson.h>
 
 static struct platform_device loongson2_cpufreq_device = {
 	.name = "loongson2_cpufreq",
@@ -24,15 +26,19 @@ static struct platform_device loongson3_cpufreq_device = {
 
 static int __init loongson_cpufreq_init(void)
 {
-	struct cpuinfo_mips *c = &current_cpu_data;
+#ifdef CONFIG_LEFI_FIRMWARE_INTERFACE
+if (!loongson_freqctrl)
+	return -ENODEV;
+return platform_device_register(&loongson3_cpufreq_device);
+#else
 
 	/* Only 2F revision and it's successors support CPUFreq */
 	if ((c->processor_id & PRID_REV_MASK) == PRID_REV_LOONGSON2F)
 		return platform_device_register(&loongson2_cpufreq_device);
-	if ((c->processor_id & PRID_REV_MASK) >= PRID_REV_LOONGSON3A_R1)
-		return platform_device_register(&loongson3_cpufreq_device);
+
 
 	return -ENODEV;
+#endif
 }
 
 arch_initcall(loongson_cpufreq_init);

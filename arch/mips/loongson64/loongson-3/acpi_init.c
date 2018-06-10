@@ -5,6 +5,7 @@
 #include <linux/ioport.h>
 #include <linux/export.h>
 #include <linux/interrupt.h>
+#include <loongson.h>
 #include <loongson-pch.h>
 
 static int acpi_irq;
@@ -231,6 +232,10 @@ enable_power_button:
 
 int __init loongson_acpi_init(void)
 {
+	if (loongson_sysconf.systype == Loongson_SOC) {
+		pr_info("Loongson_SoC ACPI support is W.I.P.")
+		return 0;
+	}
 	switch (loongson_pch->type) {
 	case LS2H:
 		acpi_irq = LS2H_PCH_ACPI_IRQ;

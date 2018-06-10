@@ -161,8 +161,9 @@
 
 #endif
 
-extern void fixup_irqs(void);
+extern void ls3_fixup_irqs(void);
 extern void loongson3_ipi_interrupt(struct pt_regs *regs);
+extern void loongson2k_ipi_interrupt(struct pt_regs *regs);
 
 #include_next <irq.h>
 #endif /* __ASM_MACH_LOONGSON64_IRQ_H_ */

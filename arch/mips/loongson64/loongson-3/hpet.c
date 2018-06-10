@@ -5,6 +5,7 @@
 #include <linux/delay.h>
 #include <linux/spinlock.h>
 #include <linux/interrupt.h>
+#include <loongson.h>
 
 #include <asm/hpet.h>
 #include <asm/time.h>
@@ -300,8 +301,11 @@ static struct clocksource csrc_hpet = {
 
 int __init init_hpet_clocksource(void)
 {
+	if (loongson_sysconf.systype == Loongson_PCH) {
 	csrc_hpet.mult = clocksource_hz2mult(hpet_freq, csrc_hpet.shift);
 	return clocksource_register_hz(&csrc_hpet, hpet_freq);
+}
+return 0;
 }
 
 arch_initcall(init_hpet_clocksource);

@@ -1,0 +1,345 @@
+/* SPDX-License-Identifier: GPL-2.0 */
+/*
+ *  Copyright (C) 2018, Jiaxun Yang <jiaxun.yang@flygoat.comz>
+ */
+#ifndef _LOONGSON_SOC_H
+#define _LOONGSON_SOC_H
+
+#include <linux/types.h>
+#include <linux/pci.h>
+#include <asm/addrspace.h>
+
+#include <asm/addrspace.h>
+
+/* Loongson-2K related Definitions */
+
+#define LS2K_APB_REG_BASE		0x1f000000
+
+/* CHIP CONFIG regs */
+#define LS2K_CHIPCFG_REG_BASE		(LS2K_APB_REG_BASE + 0x00e10000)
+
+#define LS2K_CONF_REG_BASE		(LS2K_CHIPCFG_REG_BASE + 0x0400)
+#define LS2K_CONF_MAC_REG		(LS2K_CONF_REG_BASE + 0x20)
+#define LS2K_CONF_UART_REG		(LS2K_CONF_REG_BASE + 0x28)
+#define LS2K_CONF_GPU_REG		(LS2K_CONF_REG_BASE + 0x30)
+#define LS2K_PIX0_PLL_REG		(LS2K_CONF_REG_BASE + 0xb0)
+#define LS2K_PIX1_PLL_REG		(LS2K_CONF_REG_BASE + 0xc0)
+
+#define LS2K_CORE0_INTISR0		(LS2K_CHIPCFG_REG_BASE + 0x1040)
+#define LS2K_CORE0_INTISR1		(LS2K_CHIPCFG_REG_BASE + 0x1048)
+#define LS2K_CORE1_INTISR0		(LS2K_CHIPCFG_REG_BASE + 0x1140)
+#define LS2K_CORE1_INTISR1		(LS2K_CHIPCFG_REG_BASE + 0x1148)
+
+#define LS2K_INT_ROUTE_REG_BASE		(LS2K_CHIPCFG_REG_BASE + 0x1400)
+#define LS2K_INT_UART0_REG		(LS2K_INT_ROUTE_REG_BASE + 0x00)
+#define LS2K_INT_GMAC0_REG		(LS2K_INT_ROUTE_REG_BASE + 0x0c)
+#define LS2K_INT_GPU_REG		(LS2K_INT_ROUTE_REG_BASE + 0x1d)
+#define LS2K_INT_AHCI_REG		(LS2K_INT_ROUTE_REG_BASE + 0x13)
+#define LS2K_INT_OHCI_REG		(LS2K_INT_ROUTE_REG_BASE + 0x53)
+
+#define LS2K_INT_REG_BASE		(LS2K_CHIPCFG_REG_BASE + 0x1420)
+#define LS2K_INT_ISR0_REG		(LS2K_INT_REG_BASE + 0x00)
+#define LS2K_INT_IEN0_REG		(LS2K_INT_REG_BASE + 0x04)
+#define LS2K_INT_SET0_REG		(LS2K_INT_REG_BASE + 0x08)
+#define LS2K_INT_CLR0_REG		(LS2K_INT_REG_BASE + 0x0c)
+#define LS2K_INT_POL0_REG		(LS2K_INT_REG_BASE + 0x10)
+#define LS2K_INT_EDGE0_REG		(LS2K_INT_REG_BASE + 0x14)
+#define LS2K_INT_BOUNCE0_REG		(LS2K_INT_REG_BASE + 0x18)
+#define LS2K_INT_AUTO0_REG		(LS2K_INT_REG_BASE + 0x1c)
+#define LS2K_INT_ISR1_REG		(LS2K_INT_REG_BASE + 0x40)
+#define LS2K_INT_IEN1_REG		(LS2K_INT_REG_BASE + 0x44)
+#define LS2K_INT_SET1_REG		(LS2K_INT_REG_BASE + 0x48)
+#define LS2K_INT_CLR1_REG		(LS2K_INT_REG_BASE + 0x4c)
+#define LS2K_INT_POL1_REG		(LS2K_INT_REG_BASE + 0x50)
+#define LS2K_INT_EDGE1_REG		(LS2K_INT_REG_BASE + 0x54)
+#define LS2K_INT_BOUNCE1_REG		(LS2K_INT_REG_BASE + 0x58)
+#define LS2K_INT_AUTO1_REG		(LS2K_INT_REG_BASE + 0x5c)
+
+#define LS2K_GPIO_REG_BASE		(LS2K_CHIPCFG_REG_BASE + 0x0500)
+#define LS2K_GPIO0_OEN_REG		(LS2K_GPIO_REG_BASE + 0x00)
+#define LS2K_GPIO1_OEN_REG		(LS2K_GPIO_REG_BASE + 0x08)
+#define LS2K_GPIO0_O_REG		(LS2K_GPIO_REG_BASE + 0x10)
+#define LS2K_GPIO1_O_REG		(LS2K_GPIO_REG_BASE + 0x18)
+#define LS2K_GPIO0_I_REG		(LS2K_GPIO_REG_BASE + 0x20)
+#define LS2K_GPIO1_I_REG		(LS2K_GPIO_REG_BASE + 0x28)
+#define LS2K_GPIO0_INT_REG		(LS2K_GPIO_REG_BASE + 0x30)
+#define LS2K_GPIO1_INT_REG		(LS2K_GPIO_REG_BASE + 0x38)
+
+#define LS2K_DMACFG_REG_BASE		(LS2K_CHIPCFG_REG_BASE + 0x0c00)
+#define LS2K_DMA0_CFG_REG		(LS2K_DMACFG_REG_BASE + 0x00)
+#define LS2K_DMA1_CFG_REG		(LS2K_DMACFG_REG_BASE + 0x10)
+#define LS2K_DMA2_CFG_REG		(LS2K_DMACFG_REG_BASE + 0x20)
+#define LS2K_DMA3_CFG_REG		(LS2K_DMACFG_REG_BASE + 0x30)
+#define LS2K_DMA4_CFG_REG		(LS2K_DMACFG_REG_BASE + 0x40)
+
+/* USB regs */
+#define LS2K_EHCI_REG_BASE		(LS2K_APB_REG_BASE + 0x00e00000)
+#define LS2K_OHCI_REG_BASE		(LS2K_APB_REG_BASE + 0x00e08000)
+
+/* GMAC regs */
+#define LS2K_GMAC0_REG_BASE		(LS2K_APB_REG_BASE + 0x00e10000)
+#define LS2K_GMAC1_REG_BASE		(LS2K_APB_REG_BASE + 0x00e18000)
+
+/* HDA regs */
+#define LS2K_HDA_REG_BASE		(LS2K_APB_REG_BASE + 0x00e20000)
+
+/* SATA regs */
+#define LS2K_SATA_REG_BASE		(LS2K_APB_REG_BASE + 0x00e30000)
+
+/* GPU regs */
+#define LS2K_GPU_REG_BASE		(LS2K_APB_REG_BASE + 0x00e40000)
+
+/* OTG regs */
+#define LS2K_OTG_REG_BASE		(LS2K_APB_REG_BASE + 0x00e60000)
+
+/* SPI regs */
+#define LS2K_SPI_REG_BASE		(LS2K_APB_REG_BASE + 0x00e70000)
+
+/* UART regs */
+#define LS2K_UART0_REG_BASE		(LS2K_APB_REG_BASE + 0x00e00000)
+#define LS2K_UART1_REG_BASE		(LS2K_APB_REG_BASE + 0x00e00100)
+#define LS2K_UART2_REG_BASE		(LS2K_APB_REG_BASE + 0x00e00200)
+#define LS2K_UART3_REG_BASE		(LS2K_APB_REG_BASE + 0x00e00300)
+#define LS2K_UART4_REG_BASE		(LS2K_APB_REG_BASE + 0x00e00400)
+#define LS2K_UART5_REG_BASE		(LS2K_APB_REG_BASE + 0x00e00500)
+#define LS2K_UART6_REG_BASE		(LS2K_APB_REG_BASE + 0x00e00600)
+#define LS2K_UART7_REG_BASE		(LS2K_APB_REG_BASE + 0x00e00700)
+#define LS2K_UART8_REG_BASE		(LS2K_APB_REG_BASE + 0x00e00800)
+#define LS2K_UART9_REG_BASE		(LS2K_APB_REG_BASE + 0x00e00900)
+#define LS2K_UART10_REG_BASE		(LS2K_APB_REG_BASE + 0x00e00a00)
+#define LS2K_UART11_REG_BASE		(LS2K_APB_REG_BASE + 0x00e00b00)
+
+#define LS2K_CAN0_REG_BASE		(LS2K_APB_REG_BASE + 0x00e00c00)
+#define LS2K_CAN1_REG_BASE		(LS2K_APB_REG_BASE + 0x00e00d00)
+
+/* I2C regs */
+#define LS2K_I2C0_REG_BASE		(LS2K_APB_REG_BASE + 0x00e01000)
+#define LS2K_I2C0_PRER_LO_REG		(LS2K_I2C0_REG_BASE + 0x0)
+#define LS2K_I2C0_PRER_HI_REG		(LS2K_I2C0_REG_BASE + 0x1)
+#define LS2K_I2C0_CTR_REG		(LS2K_I2C0_REG_BASE + 0x2)
+#define LS2K_I2C0_TXR_REG		(LS2K_I2C0_REG_BASE + 0x3)
+#define LS2K_I2C0_RXR_REG		(LS2K_I2C0_REG_BASE + 0x3)
+#define LS2K_I2C0_CR_REG		(LS2K_I2C0_REG_BASE + 0x4)
+#define LS2K_I2C0_SR_REG		(LS2K_I2C0_REG_BASE + 0x4)
+
+#define LS2K_I2C1_REG_BASE		(LS2K_APB_REG_BASE + 0x00e01800)
+#define LS2K_I2C1_PRER_LO_REG		(LS2K_I2C1_REG_BASE + 0x0)
+#define LS2K_I2C1_PRER_HI_REG		(LS2K_I2C1_REG_BASE + 0x1)
+#define LS2K_I2C1_CTR_REG		(LS2K_I2C1_REG_BASE + 0x2)
+#define LS2K_I2C1_TXR_REG		(LS2K_I2C1_REG_BASE + 0x3)
+#define LS2K_I2C1_RXR_REG		(LS2K_I2C1_REG_BASE + 0x3)
+#define LS2K_I2C1_CR_REG		(LS2K_I2C1_REG_BASE + 0x4)
+#define LS2K_I2C1_SR_REG		(LS2K_I2C1_REG_BASE + 0x4)
+
+#define CR_START	0x80
+#define CR_STOP		0x40
+#define CR_READ		0x20
+#define CR_WRITE	0x10
+#define CR_ACK		0x8
+#define CR_IACK		0x1
+
+#define SR_NOACK	0x80
+#define SR_BUSY		0x40
+#define SR_AL		0x20
+#define SR_TIP		0x2
+#define SR_IF		0x1
+
+/* PWM regs */
+#define LS2K_PWM_REG_BASE		(LS2K_APB_REG_BASE + 0x00e02000)
+
+/* HPET regs */
+#define LS2K_HPET_REG_BASE		(LS2K_APB_REG_BASE + 0x00e04000)
+
+/* AC97 regs */
+#define LS2K_AC97_REG_BASE		(LS2K_APB_REG_BASE + 0x00e05000)
+
+/* NAND regs */
+#define LS2K_NAND_REG_BASE		(LS2K_APB_REG_BASE + 0x00e06000)
+#define LS2K_NAND_CMD_REG		(LS2K_NAND_REG_BASE + 0x0000)
+#define LS2K_NAND_ADDR_C_REG		(LS2K_NAND_REG_BASE + 0x0004)
+#define LS2K_NAND_ADDR_R_REG		(LS2K_NAND_REG_BASE + 0x0008)
+#define LS2K_NAND_TIMING_REG		(LS2K_NAND_REG_BASE + 0x000c)
+#define LS2K_NAND_IDL_REG		(LS2K_NAND_REG_BASE + 0x0010)
+#define LS2K_NAND_STA_IDH_REG		(LS2K_NAND_REG_BASE + 0x0014)
+#define LS2K_NAND_PARAM_REG		(LS2K_NAND_REG_BASE + 0x0018)
+#define LS2K_NAND_OP_NUM_REG		(LS2K_NAND_REG_BASE + 0x001c)
+#define LS2K_NAND_CSRDY_MAP_REG		(LS2K_NAND_REG_BASE + 0x0020)
+#define LS2K_NAND_DMA_ACC_REG		(LS2K_NAND_REG_BASE + 0x0040)
+
+/* ACPI regs */
+#define LS2K_ACPI_REG_BASE		(LS2K_APB_REG_BASE + 0x00e07000)
+#define LS2K_PM_SOC_REG			(LS2K_ACPI_REG_BASE + 0x0000)
+#define LS2K_PM_RESUME_REG		(LS2K_ACPI_REG_BASE + 0x0004)
+#define LS2K_PM_RTC_REG			(LS2K_ACPI_REG_BASE + 0x0008)
+#define LS2K_PM1_STS_REG		(LS2K_ACPI_REG_BASE + 0x000c)
+#define LS2K_PM1_EN_REG			(LS2K_ACPI_REG_BASE + 0x0010)
+#define LS2K_PM1_CNT_REG		(LS2K_ACPI_REG_BASE + 0x0014)
+#define LS2K_PM1_TMR_REG		(LS2K_ACPI_REG_BASE + 0x0018)
+#define LS2K_P_CNT_REG			(LS2K_ACPI_REG_BASE + 0x001c)
+#define LS2K_P_LVL2_REG			(LS2K_ACPI_REG_BASE + 0x0020)
+#define LS2K_P_LVL3_REG			(LS2K_ACPI_REG_BASE + 0x0024)
+#define LS2K_GPE0_STS_REG		(LS2K_ACPI_REG_BASE + 0x0028)
+#define LS2K_GPE0_EN_REG		(LS2K_ACPI_REG_BASE + 0x002c)
+#define LS2K_RST_CNT_REG		(LS2K_ACPI_REG_BASE + 0x0030)
+#define LS2K_WD_SET_REG			(LS2K_ACPI_REG_BASE + 0x0034)
+#define LS2K_WD_TIMER_REG		(LS2K_ACPI_REG_BASE + 0x0038)
+#define LS2K_DVFS_CNT_REG		(LS2K_ACPI_REG_BASE + 0x003c)
+#define LS2K_DVFS_STS_REG		(LS2K_ACPI_REG_BASE + 0x0040)
+#define LS2K_MS_CNT_REG			(LS2K_ACPI_REG_BASE + 0x0044)
+#define LS2K_MS_THT_REG			(LS2K_ACPI_REG_BASE + 0x0048)
+#define LS2K_THSENS_CNT_REG		(LS2K_ACPI_REG_BASE + 0x004c)
+#define LS2K_GEN_RTC1_REG		(LS2K_ACPI_REG_BASE + 0x0050)
+#define LS2K_GEN_RTC2_REG		(LS2K_ACPI_REG_BASE + 0x0054)
+
+/* RTC regs */
+#define LS2K_RTC_REG_BASE		(LS2K_APB_REG_BASE + 0x00e03000)
+#define LS2K_TOY_TRIM_REG		(LS2K_RTC_REG_BASE + 0x0020)
+#define LS2K_TOY_WRITE0_REG		(LS2K_RTC_REG_BASE + 0x0024)
+#define LS2K_TOY_WRITE1_REG		(LS2K_RTC_REG_BASE + 0x0028)
+#define LS2K_TOY_READ0_REG		(LS2K_RTC_REG_BASE + 0x002c)
+#define LS2K_TOY_READ1_REG		(LS2K_RTC_REG_BASE + 0x0030)
+#define LS2K_TOY_MATCH0_REG		(LS2K_RTC_REG_BASE + 0x0034)
+#define LS2K_TOY_MATCH1_REG		(LS2K_RTC_REG_BASE + 0x0038)
+#define LS2K_TOY_MATCH2_REG		(LS2K_RTC_REG_BASE + 0x003c)
+#define LS2K_RTC_CTRL_REG		(LS2K_RTC_REG_BASE + 0x0040)
+#define LS2K_RTC_TRIM_REG		(LS2K_RTC_REG_BASE + 0x0060)
+#define LS2K_RTC_WRITE0_REG		(LS2K_RTC_REG_BASE + 0x0064)
+#define LS2K_RTC_READ0_REG		(LS2K_RTC_REG_BASE + 0x0068)
+#define LS2K_RTC_MATCH0_REG		(LS2K_RTC_REG_BASE + 0x006c)
+#define LS2K_RTC_MATCH1_REG		(LS2K_RTC_REG_BASE + 0x0070)
+#define LS2K_RTC_MATCH2_REG		(LS2K_RTC_REG_BASE + 0x0074)
+
+#define LS2K_SDIO_REG_BASE		(LS2K_APB_REG_BASE + 0x00e0c000)
+#define LS2K_I2S_REG_BASE		(LS2K_APB_REG_BASE + 0x00e0d000)
+
+/* DC regs */
+#define LS2K_FB_CFG_DVO0_REG		0x1240
+#define LS2K_FB_CFG_DVO1_REG		0x1250
+#define LS2K_FB_ADDR0_DVO0_REG		0x1260
+#define LS2K_FB_ADDR0_DVO1_REG		0x1270
+#define LS2K_FB_STRI_DVO0_REG		0x1280
+#define LS2K_FB_STRI_DVO1_REG		0x1290
+
+#define LS2K_FB_DITCFG_DVO0_REG		0x1360
+#define LS2K_FB_DITCFG_DVO1_REG		0x1370
+#define LS2K_FB_DITTAB_LO_DVO0_REG	0x1380
+#define LS2K_FB_DITTAB_LO_DVO1_REG	0x1390
+#define LS2K_FB_DITTAB_HI_DVO0_REG	0x13a0
+#define LS2K_FB_DITTAB_HI_DVO1_REG	0x13b0
+#define LS2K_FB_PANCFG_DVO0_REG		0x13c0
+#define LS2K_FB_PANCFG_DVO1_REG		0x13d0
+#define LS2K_FB_PANTIM_DVO0_REG		0x13e0
+#define LS2K_FB_PANTIM_DVO1_REG		0x13f0
+
+#define LS2K_FB_HDISPLAY_DVO0_REG	0x1400
+#define LS2K_FB_HDISPLAY_DVO1_REG	0x1410
+#define LS2K_FB_HSYNC_DVO0_REG		0x1420
+#define LS2K_FB_HSYNC_DVO1_REG		0x1430
+
+#define LS2K_FB_VDISPLAY_DVO0_REG	0x1480
+#define LS2K_FB_VDISPLAY_DVO1_REG	0x1490
+#define LS2K_FB_VSYNC_DVO0_REG		0x14a0
+#define LS2K_FB_VSYNC_DVO1_REG		0x14b0
+
+#define LS2K_FB_GAMINDEX_DVO0_REG	0x14e0
+#define LS2K_FB_GAMINDEX_DVO1_REG	0x14f0
+#define LS2K_FB_GAMDATA_DVO0_REG	0x1500
+#define LS2K_FB_GAMDATA_DVO1_REG	0x1510
+
+#define LS2K_FB_CUR_CFG_REG		0x1520
+#define LS2K_FB_CUR_ADDR_REG		0x1530
+#define LS2K_FB_CUR_LOC_ADDR_REG	0x1540
+#define LS2K_FB_CUR_BACK_REG		0x1550
+#define LS2K_FB_CUR_FORE_REG		0x1560
+
+#define LS2K_FB_INT_REG			0x1570
+
+#define LS2K_FB_ADDR1_DVO0_REG		0x1580
+#define LS2K_FB_ADDR1_DVO1_REG		0x1590
+
+#define LS2K_FB_DAC_CTRL_REG		0x1600
+#define LS2K_FB_DVO_OUTPUT_REG		0x1630
+
+/* REG ACCESS*/
+#define ls2k_readb(addr)		(*(volatile u8 *)CKSEG1ADDR(addr))
+#define ls2k_readw(addr)		(*(volatile u16 *)CKSEG1ADDR(addr))
+#define ls2k_readl(addr)		(*(volatile u32 *)CKSEG1ADDR(addr))
+#define ls2k_readq(addr)		(*(volatile u64 *)CKSEG1ADDR(addr))
+#define ls2k_writeb(val, addr)		*(volatile u8 *)CKSEG1ADDR(addr) = (val)
+#define ls2k_writew(val, addr)		*(volatile u16 *)CKSEG1ADDR(addr) = (val)
+#define ls2k_writel(val, addr)		*(volatile u32 *)CKSEG1ADDR(addr) = (val)
+#define ls2k_writeq(val, addr)		*(volatile u64 *)CKSEG1ADDR(addr) = (val)
+
+#define LS2K_PCIE_MAX_PORTNUM	3
+#define LS2K_PCIE_PORT0		0
+#define LS2K_PCIE_PORT1		1
+#define LS2K_PCIE_PORT2		2
+#define LS2K_PCIE_PORT3		3
+
+#define LS2K_PCIE_MEM1_BASE	0x40000000
+
+#define LS2K_PCIE_GET_PORTNUM(sysdata) \
+               ((((struct pci_controller *)(sysdata))->mem_resource->start \
+                       - LS2K_PCIE_MEM1_BASE) >> 28)
+
+#define LS2K_CHIP_CFG_REG_CLK_CTRL3		0x22c
+#define LS2K_CLK_CTRL3_BIT_PEREF_EN(portnum)	(1 << (24 + portnum))
+
+#define LS2K_PCIE_MEM0_BASE_PORT(portnum)	(0x10000000 + (portnum << 25))
+#define LS2K_PCIE_IO_BASE_PORT(portnum)		(0x18100000 + (portnum << 22))
+#define LS2K_PCIE_REG_BASE_PORT(portnum)	(0x18118000 + (portnum << 22))
+#define LS2K_PCIE_PORT_INT_MASK_REG(portnum)	(LS2K_PCIE_REG_BASE_PORT(portnum) + 0x20)
+#define LS2K_PCIE_PORT_REG_CTR0			0x0
+#define LS2K_PCIE_REG_CTR0_BIT_LTSSM_EN		(1 << 3)
+#define LS2K_PCIE_REG_CTR0_BIT_REQ_L1		(1 << 12)
+#define LS2K_PCIE_REG_CTR0_BIT_RDY_L23		(1 << 13)
+#define LS2K_PCIE_PORT_REG_STAT1		0xC
+#define LS2K_PCIE_REG_STAT1_MASK_LTSSM		0x0000003f
+#define LS2K_PCIE_REG_STAT1_BIT_LINKUP		(1 << 6)
+#define LS2K_PCIE_PORT_REG_CFGADDR		0x24
+#define LS2K_PCIE_PORT_REG_CTR_STAT		0x28
+#define LS2K_PCIE_REG_CTR_STAT_BIT_ISX4		(1 << 26)
+#define LS2K_PCIE_REG_CTR_STAT_BIT_ISRC		(1 << 27)
+
+#define LS2K_PCIE_PORT_HEAD_BASE_PORT(portnum)	(0x18114000 + (portnum << 22))
+#define LS2K_PCIE_DEV_HEAD_BASE_PORT(portnum)	(0x18116000 + (portnum << 22))
+
+#define LIE_IN_WINDOW(addr,base,mask)		((addr & mask) == base)
+#define MAP_2_WINDOW(addr,mmap,mask)		((addr & (~(mask))) | (mmap & mask))
+#define LS2K_PCIE_MEM0_DOWN_BASE		0x10000000
+#define LS2K_PCIE_MEM0_DOWN_MASK		0xf8000000
+#define LS2K_PCIE_MEM0_UP_BASE			0x10000000
+#define LS2K_PCIE_MEM0_UP_MASK			0xfe000000
+#define LS2K_PCIE_IO_DOWN_BASE			0x18100000
+#define LS2K_PCIE_IO_DOWN_MASK			0xff3f0000
+#define LS2K_PCIE_IO_UP_BASE			0x0
+#define LS2K_PCIE_IO_UP_MASK			0xffff0000
+
+/* Data structrues */
+enum soc_type { /* SoC types */
+	LS2KR1   = 1
+};
+
+struct system_on_chip {
+	int	type; /* SoC Type */
+	int 	pcidev_max_funcs;
+	void	(*early_config)(void);
+	void	(*init_irq)(void);
+	void	(*irq_dispatch)(void);
+	int	(*pcibios_map_irq)(const struct pci_dev *dev, u8 slot, u8 pin);
+	int	(*pcibios_dev_init)(struct pci_dev *dev);
+	void	(*pch_arch_initcall)(void);
+	void	(*pch_device_initcall)(void);
+};
+
+extern struct system_on_chip ls2k_soc;
+extern struct system_on_chip *loongson_soc;
+
+
+extern struct pci_ops ls2kr1_pci_ops[4];
+extern void ls2k_init_irq(void);
+extern void ls2k_irq_dispatch(void);
+extern int ls2k_pcibios_map_irq(const struct pci_dev *dev, u8 slot, u8 pin);
+
+
+#endif

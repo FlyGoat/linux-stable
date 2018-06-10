@@ -9,10 +9,12 @@
 #include <asm/i8259.h>
 #include <asm/mipsregs.h>
 
+#include <loongson.h>
 #include <loongson-pch.h>
+#include <loongson-soc.h>
 #include "smp.h"
 
-int plat_set_irq_affinity(struct irq_data *d, const struct cpumask *affinity,
+int ls3_plat_set_irq_affinity(struct irq_data *d, const struct cpumask *affinity,
 			  bool force)
 {
 	unsigned int cpu;
@@ -34,7 +36,7 @@ int plat_set_irq_affinity(struct irq_data *d, const struct cpumask *affinity,
 
 #define UNUSED_IPS (CAUSEF_IP5 | CAUSEF_IP4 | CAUSEF_IP1 | CAUSEF_IP0)
 
-void mach_irq_dispatch(unsigned int pending)
+void ls3_mach_irq_dispatch(unsigned int pending)
 {
 	if (pending & CAUSEF_IP7)
 		do_IRQ(LOONGSON_TIMER_IRQ);
@@ -58,20 +60,20 @@ static struct irqaction cascade_irqaction = {
 	.name = "cascade",
 };
 
-static inline void mask_loongson_irq(struct irq_data *d) { }
-static inline void unmask_loongson_irq(struct irq_data *d) { }
+static inline void mask_loongson3_irq(struct irq_data *d) { }
+static inline void unmask_loongson3_irq(struct irq_data *d) { }
 
  /* For MIPS IRQs which shared by all cores */
-static struct irq_chip loongson_irq_chip = {
-	.name		= "Loongson",
-	.irq_ack	= mask_loongson_irq,
-	.irq_mask	= mask_loongson_irq,
-	.irq_mask_ack	= mask_loongson_irq,
-	.irq_unmask	= unmask_loongson_irq,
-	.irq_eoi	= unmask_loongson_irq,
+static struct irq_chip loongson3_irq_chip = {
+	.name		= "Loongson3",
+	.irq_ack	= mask_loongson3_irq,
+	.irq_mask	= mask_loongson3_irq,
+	.irq_mask_ack	= mask_loongson3_irq,
+	.irq_unmask	= unmask_loongson3_irq,
+	.irq_eoi	= unmask_loongson3_irq,
 };
 
-void __init mach_init_irq(void)
+void __init ls3_init_irq(void)
 {
 	clear_c0_status(ST0_IM | ST0_BEV);
 
@@ -89,7 +91,7 @@ void __init mach_init_irq(void)
 
 #ifdef CONFIG_HOTPLUG_CPU
 
-void fixup_irqs(void)
+void ls3_fixup_irqs(void)
 {
 	irq_cpu_offline();
 	clear_c0_status(ST0_IM);

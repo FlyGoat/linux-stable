@@ -291,8 +291,11 @@ static const struct platform_suspend_ops loongson_pm_ops = {
 
 static int __init loongson_pm_init(void)
 {
+	if (loongson_sysconf.systype = Loongson_SOC) {
+		pr_info("No PM for SoC.....")
+		return 0;
+	}
 	suspend_set_ops(&loongson_pm_ops);
-
 	return 0;
 }
 arch_initcall(loongson_pm_init);

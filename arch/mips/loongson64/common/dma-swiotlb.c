@@ -9,6 +9,7 @@
 
 #include <asm/bootinfo.h>
 #include <boot_param.h>
+#include <loongson.h>
 #include <loongson-pch.h>
 #include <dma-coherence.h>
 
@@ -260,6 +261,16 @@ phys_addr_t __dma_to_phys(struct device *dev, dma_addr_t daddr)
 	return ops->dma_to_phys(dev, daddr);
 }
 
+static dma_addr_t loongson2k_phys_to_dma(struct device *dev, phys_addr_t paddr)
+{
+	return paddr;
+}
+
+static phys_addr_t loongson2k_dma_to_phys(struct device *dev, dma_addr_t daddr)
+{
+	return daddr;
+}
+
 static struct loongson_dma_map_ops loongson_linear_dma_map_ops = {
 	.dma_map_ops = {
 		.alloc = loongson_dma_alloc_coherent,
@@ -283,7 +294,11 @@ void __init plat_swiotlb_setup(void)
 {
 	swiotlb_init(1);
 	mips_dma_map_ops = &loongson_linear_dma_map_ops.dma_map_ops;
-
+	if (loongson_sysconf.systype == Loongson_2K) {
+		loongson_linear_dma_map_ops.phys_to_dma = loongson2k_phys_to_dma;
+		loongson_linear_dma_map_ops.dma_to_phys = loongson2k_dma_to_phys;
+		break;
+	} else {
 	switch (loongson_pch->type) {
 	case LS2H:
 		loongson_linear_dma_map_ops.phys_to_dma = loongson_ls2h_phys_to_dma;
@@ -297,5 +312,6 @@ void __init plat_swiotlb_setup(void)
 		loongson_linear_dma_map_ops.phys_to_dma = loongson_rs780_phys_to_dma;
 		loongson_linear_dma_map_ops.dma_to_phys = loongson_rs780_dma_to_phys;
 		break;
+	}
 	}
 }

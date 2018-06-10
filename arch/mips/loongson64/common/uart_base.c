@@ -11,7 +11,9 @@
 #include <linux/export.h>
 #include <asm/bootinfo.h>
 
+#include <loongson-soc.h>
 #include <loongson.h>
+#include <boot_param.h>
 
 /* raw */
 unsigned long loongson_uart_base[MAX_UARTS] = {};
@@ -23,6 +25,18 @@ EXPORT_SYMBOL(_loongson_uart_base);
 
 void prom_init_loongson_uart_base(void)
 {
+
+#ifdef CONFIG_LEFI_FIRMWARE_INTERFACE
+	switch (loongson_sysconf.cputype) {
+		case Loongson_2K:
+		loongson_uart_base[0] = LS2K_UART0_REG_BASE;
+		break;
+		default:
+		/* The CPU provided serial port (CPU) */
+		loongson_uart_base[0] = LOONGSON_REG_BASE + 0x1e0;
+		break;
+	}
+#else
 	switch (mips_machtype) {
 	case MACH_LOONGSON_GENERIC:
 		/* The CPU provided serial port (CPU) */
@@ -44,6 +58,7 @@ void prom_init_loongson_uart_base(void)
 		loongson_uart_base[0] = LOONGSON_LIO1_BASE + 0x3f8;
 		break;
 	}
+	#endif
 
 	_loongson_uart_base[0] =
 		(unsigned long)ioremap_nocache(loongson_uart_base[0], 8);

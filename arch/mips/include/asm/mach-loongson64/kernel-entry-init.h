@@ -10,6 +10,7 @@
  */
 #ifndef __ASM_MACH_LOONGSON64_KERNEL_ENTRY_H
 #define __ASM_MACH_LOONGSON64_KERNEL_ENTRY_H
+#include <cpu.h>
 
 /*
  * Override macros used in arch/mips/kernel/head.S.
@@ -28,13 +29,17 @@
 	mtc0	t0, CP0_PAGEGRAIN
 	/* Enable STFill Buffer */
 	mfc0	t0, CP0_PRID
-	andi	t0, 0xffff
-	slti	t0, 0x6308
-	bnez	t0, 1f
+	andi	t1, t0, FPIR_IMP_MASK
+	li		t2, PRID_IMP_LOONGSON_2K
+	beq		t1, t2, set
+	andi	t0, (PRID_IMP_MASK ^ PRID_REV_MASK)
+	slti	t0, (PRID_IMP_LOONGSON_64 ^ PRID_REV_LOONGSON3A_R2)
+	bnez	t0, out
+set:
 	mfc0	t0, CP0_CONFIG6
 	or	t0, 0x100
 	mtc0	t0, CP0_CONFIG6
-1:
+out:
 	_ehb
 	.set	pop
 #endif
@@ -57,13 +62,17 @@
 	mtc0	t0, CP0_PAGEGRAIN
 	/* Enable STFill Buffer */
 	mfc0	t0, CP0_PRID
-	andi	t0, 0xffff
-	slti	t0, 0x6308
-	bnez	t0, 1f
+	andi	t1, t0, FPIR_IMP_MASK
+	li		t2, PRID_IMP_LOONGSON_2K
+	beq		t1, t2, set
+	andi	t0, (PRID_IMP_MASK ^ PRID_REV_MASK)
+	slti	t0, (PRID_IMP_LOONGSON_64 ^ PRID_REV_LOONGSON3A_R2)
+	bnez	t0, out
+set:
 	mfc0	t0, CP0_CONFIG6
 	or	t0, 0x100
 	mtc0	t0, CP0_CONFIG6
-1:
+out:
 	_ehb
 	.set	pop
 #endif

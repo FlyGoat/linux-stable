@@ -16,6 +16,8 @@
 #include <linux/ptrace.h>
 #include <linux/uaccess.h>
 #include <linux/sched/signal.h>
+#include <loongson.h>
+#include <boot_param.h>
 
 #include <asm/fpu.h>
 #include <asm/cop2.h>
@@ -24,7 +26,7 @@
 #include <asm/current.h>
 #include <asm/mipsregs.h>
 
-static int loongson_cu2_call(struct notifier_block *nfb, unsigned long action,
+static int loongson3_cu2_call(struct notifier_block *nfb, unsigned long action,
 	void *data)
 {
 	unsigned int res, fpu_owned;
@@ -329,8 +331,44 @@ sigbus:
 	return NOTIFY_STOP;	/* Don't call default notifier */
 }
 
+
+static int loongson2k_cu2_call(struct notifier_block *nfb, unsigned long action,
+	void *data)
+{
+	int fpu_enabled;
+
+	switch (action) {
+	case CU2_EXCEPTION:
+		preempt_disable();
+		fpu_enabled = is_fpu_owner();
+		set_c0_status(ST0_CU1 | ST0_CU2);
+		enable_fpu_hazard();
+		KSTK_STATUS(current) |= (ST0_CU1 | ST0_CU2);
+		/* If FPU is enabled, we needn't init or restore fp */
+		if(!fpu_enabled) {
+			set_thread_flag(TIF_USEDFPU);
+			if (!used_math()) {
+				_init_fpu(current->thread.fpu.fcr31);
+				set_used_math();
+			} else
+				_restore_fp(current);
+		}
+		preempt_enable();
+
+		return NOTIFY_STOP;	/* Don't call default notifier */
+	}
+
+	return NOTIFY_OK;	/* Let default notifier send signals */
+}
+
+
 static int __init loongson_cu2_setup(void)
 {
-	return cu2_notifier(loongson_cu2_call, 0);
+if (loongson_sysconf.cputype == Loongson_2K){
+	return cu2_notifier(loongson2k_cu2_call, 0);
+} else {
+	return cu2_notifier(loongson3_cu2_call, 0);
+}
+	return 0;
 }
 early_initcall(loongson_cu2_setup);

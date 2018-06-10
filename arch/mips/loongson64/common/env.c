@@ -57,7 +57,7 @@ void __init prom_init_env(void)
 {
 	/* pmon passes arguments in 32bit pointers */
 	char freq[12];
-	unsigned int processor_id;
+	unsigned int processor_id = (&current_cpu_data)->processor_id;
 
 #ifndef CONFIG_LEFI_FIRMWARE_INTERFACE
 	int *_prom_envp;
@@ -107,9 +107,19 @@ void __init prom_init_env(void)
 
 	cpu_clock_freq = ecpu->cpu_clock_freq;
 	loongson_sysconf.cputype = ecpu->cputype;
-	switch (ecpu->cputype) {
+
+	pr_info("LEFI passed CPUTYPE: %x\n", ecpu->cputype)
+
+	if ((processor_id & PRID_IMP_MASK) == PRID_IMP_LOONGSON_2K) {
+		pr_info("How can we trust him? we're Loongson-2K!\n")
+		loongson_sysconf.cputype = Loongson_2K;
+		pr_info("Loongson, ofcourse we still live you!\n")
+	}
+
+	switch (loongson_sysconf.cputype) {
 	case Legacy_3A:
 	case Loongson_3A:
+		loongson_sysconf.systype = Loongson_PCH;
 		loongson_sysconf.cores_per_node = 4;
 		loongson_sysconf.cores_per_package = 4;
 		smp_group[0] = 0x900000003ff01000;
@@ -133,6 +143,7 @@ void __init prom_init_env(void)
 		break;
 	case Legacy_3B:
 	case Loongson_3B:
+		loongson_sysconf.systype = Loongson_PCH;
 		loongson_sysconf.cores_per_node = 4; /* One chip has 2 nodes */
 		loongson_sysconf.cores_per_package = 8;
 		smp_group[0] = 0x900000003ff01000;
@@ -154,10 +165,16 @@ void __init prom_init_env(void)
 		loongson_sysconf.ht_control_base = 0x90001EFDFB000000;
 		loongson_sysconf.workarounds = WORKAROUND_CPUHOTPLUG;
 		break;
+	case Legacy_2K:
+	case Loongson_2K:
+		loongson_sysconf.systype = Loongson_SOC;
+		loongson_sysconf.cores_per_node = 2;
+		loongson_sysconf.cores_per_package = 2;
+		smp_group[0] = 0xffffffffbfe10000;
+		smp_group[1] = 0xffffffffbfe10100;
+		break;
 	default:
-		loongson_sysconf.cores_per_node = 1;
-		loongson_sysconf.cores_per_package = 1;
-		loongson_chipcfg[0] = 0x900000001fe00180;
+	panic("Unknow Loongson CPU type");
 	}
 
 	loongson_sysconf.nr_cpus = ecpu->nr_cpus;
@@ -190,6 +207,7 @@ void __init prom_init_env(void)
 	hw_coherentio = !eirq_source->dma_noncoherent;
 	pr_info("BIOS configured I/O coherency: %s\n", hw_coherentio?"ON":"OFF");
 
+	if (loongson_sysconf.systype == loongson_pch) {
 	if (strstr(eboard->name,"2H")) {
 		loongson_pch = &ls2h_pch;
 		loongson_sysconf.ec_sci_irq = 0x80;
@@ -203,6 +221,17 @@ void __init prom_init_env(void)
 		loongson_sysconf.ec_sci_irq = 0x07;
 		loongson_fdt_blob = __dtb_loongson3_rs780_begin;
 	}
+	}	elseif (loongson_sysconf.systype == Loongson_SOC) {
+		switch (loongson_sysconf.cputype) {
+			case Loongson_2K:
+			loongson_soc = &ls2kr1_soc;
+			loongson_fdt_blob = __dtb_loongson2kr1_begin;
+			break;
+			default:
+			panic("Unkonow Loongson SoC")
+		}
+	}
+
 	if (esys->vers >= 2 && esys->of_dtb_addr)
 		loongson_fdt_blob = (void *)(esys->of_dtb_addr);
 
@@ -234,7 +263,16 @@ void __init prom_init_env(void)
 			sizeof(struct sensor_device) * loongson_sysconf.nr_sensors);
 #endif
 	if (cpu_clock_freq == 0) {
-		processor_id = (&current_cpu_data)->processor_id;
+	pr_info("No CPUFreq passed to kernel");
+	#ifdef CONFIG_LEFI_FIRMWARE_INTERFACE
+		if (loongson_sysconf.cputype == Loongson_2K) {
+			cpu_clock_freq = 660000000;
+			goto out;
+		} else {
+			goto via_prid;
+		}
+	#endif
+via_prid:
 		switch (processor_id & PRID_REV_MASK) {
 		case PRID_REV_LOONGSON2E:
 			cpu_clock_freq = 533080000;
@@ -256,6 +294,7 @@ void __init prom_init_env(void)
 			cpu_clock_freq = 100000000;
 			break;
 		}
+out:
 	}
 	mips_cpu_frequency = cpu_clock_freq;
 	pr_info("CpuClock = %u\n", cpu_clock_freq);

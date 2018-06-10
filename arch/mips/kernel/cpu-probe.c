@@ -569,6 +569,7 @@ static int set_ftlb_enable(struct cpuinfo_mips *c, enum ftlb_flags flags)
 		if (!(flags & FTLB_EN))
 			return 1;
 		return 0;
+	case CPU_LOONGSON2K:
 	case CPU_LOONGSON3:
 		/* Flush ITLB, DTLB, VTLB and FTLB */
 		write_c0_diag(LOONGSON_DIAG_ITLB | LOONGSON_DIAG_DTLB |
@@ -1860,6 +1861,29 @@ static inline void cpu_probe_loongson(struct cpuinfo_mips *c, unsigned int cpu)
 
 		decode_configs(c);
 		c->options |= MIPS_CPU_FTLB | MIPS_CPU_TLBINV | MIPS_CPU_LDPTE;
+		c->writecombine = _CACHE_UNCACHED_ACCELERATED;
+		break;
+	case PRID_IMP_LOONGSON_2K:
+		switch (c->processor_id & PRID_REV_MASK) {
+		case PRID_REV_LOONGSON2K_R1_0:
+			c->cputype = CPU_LOONGSON2K;
+			__cpu_name[cpu] = "Loongson-2K";
+			set_elf_platform(cpu, "loongson2k");
+			set_isa(c, MIPS_CPU_ISA_M64R2);
+			__cpu_full_name[cpu] = "Loongson-2K (Loongson-2K1000A)";
+			break;
+		case PRID_REV_LOONGSON2K_R1_1:
+			c->cputype = CPU_LOONGSON2K;
+			__cpu_name[cpu] = "Loongson-2K";
+			set_elf_platform(cpu, "loongson2k");
+			set_isa(c, MIPS_CPU_ISA_M64R2);
+			__cpu_full_name[cpu] = "Loongson-2K (Loongson-2K1000B)";
+			break;
+		}
+		decode_configs(c);
+		c->options = R4K_OPTS |
+			     MIPS_CPU_FPU | MIPS_CPU_LLSC |
+			     MIPS_CPU_32FPR | MIPS_CPU_FTLB | MIPS_CPU_TLBINV | MIPS_CPU_LDPTE;
 		c->writecombine = _CACHE_UNCACHED_ACCELERATED;
 		break;
 	default:
